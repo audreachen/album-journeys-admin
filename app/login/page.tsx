@@ -1,0 +1,3 @@
+'use client';
+import { createBrowserClient } from '@supabase/ssr';
+export default function Login(){async function login(){const db=createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+'/auth/callback'}});if(error)alert(error.message)}return <main><p>🍓 ALBUM JOURNEYS · STAFF ONLY</p><h1>The Fruit Stand</h1><section className="panel"><h2>Administrator sign-in</h2><p>Sign in with an authorized Google account. Access requires a database-approved superadmin role.</p><button onClick={login}>Continue with Google</button></section></main>}
