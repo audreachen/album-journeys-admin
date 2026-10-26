@@ -4,6 +4,7 @@ select set_config('request.jwt.claim.sub',(select user_id::text from public.jour
 set local role authenticated;
 do $$ declare n integer; denied boolean; begin
  if public.is_fruit_stand_admin() then raise exception 'Nonadmin passed admin authorization'; end if;
+ denied=false;begin perform * from public.journey_admin_users();exception when insufficient_privilege then denied=true;end;if not denied then raise exception 'Nonadmin read auth accounts';end if;
  select count(*) into n from public.terms; if n<>0 then raise exception 'Nonadmin read catalog'; end if;
  select count(*) into n from public.generation_requests; if n<>0 then raise exception 'Nonadmin read audit trail'; end if;
  denied=false;begin insert into public.terms(term,definition) values('security-test','denied');exception when insufficient_privilege then denied=true;end;if not denied then raise exception 'Nonadmin wrote catalog';end if;
@@ -19,6 +20,7 @@ select set_config('request.jwt.claim.sub',(select user_id::text from public.jour
 set local role authenticated;
 do $$ declare p uuid;m uuid;r uuid; c integer; denied boolean; begin
  if not public.is_fruit_stand_admin() then raise exception 'Google superadmin denied';end if;
+ select count(*) into c from public.journey_admin_users();if c<1 then raise exception 'Admin cannot read auth accounts';end if;
  insert into public.llm_providers(name) values('transaction-test-provider') returning id into p;
  update public.llm_providers set name='transaction-test-provider-edited' where id=p;
  insert into public.llm_models(provider_id,name,model_key) values(p,'transaction-test-model','transaction-test-model') returning id into m;
