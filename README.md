@@ -33,4 +33,10 @@ The public generator selects an enabled weighted chain, uses its actual step mod
 
 Existing user images can be imported with **Refresh listener uploads**; this catalogs their paths without moving their files. Replacing a catalog entry for a listener image preserves the original object. Explicit deletion warns that a listener's journal/profile may be affected.
 
-Authenticated browser checks and a screenshot require signing in with the existing Google superadmin account. Database-role tests do not replace these checks.
+Authenticated browser checks use the existing Google superadmin account. Database-role tests do not replace these checks.
+
+### Deployment verification (October 26, 2026)
+
+The Google superadmin session successfully opened all required screens, including accounts without profiles. Browser checks confirmed catalog create/update, private PNG upload/decoded preview/metadata update, and mix save without changing traffic weights. The temporary catalog fixture was removed; the sample energy-map image remains in the image library. A real public Gemini generation rendered successfully and created one request, one raw response and one validated media record. Invalid input returned 400; an invalid bearer session returned 401. Anonymous admin access redirects to login. Production builds and transaction-only database authorization/CRUD tests passed.
+
+Google login now explicitly requests account selection, allowing staff to switch away from an unauthorized account. The admin Vercel commit URLs retain platform SSO protection; the production custom domain uses the app's Google superadmin gate. Signup policy lists remain management-only, as described above. Full original-app lint still reports pre-existing profile-effect and unescaped-text issues outside the changed files; lint on the modified original-app files passes with existing image/navigation warnings.
