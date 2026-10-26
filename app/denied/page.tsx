@@ -1,2 +1,3 @@
 import Link from 'next/link';import {supabaseServer} from '@/lib/supabase';
 export default async function Denied(){const db=await supabaseServer();const {data:{user}}=await db.auth.getUser();return <main><h1>🍓 Staff access only</h1><p>This account is not authorized as a Google-authenticated superadmin.</p><p className="muted">{user?.email??'No active session'}</p><Link href="/login">Return to login</Link></main>}
+

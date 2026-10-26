@@ -1,0 +1,15 @@
+import Link from 'next/link';
+import { requireAdmin } from '@/lib/admin';
+import AdminNav from '@/lib/AdminNav';
+import { saveImage, deleteImage, syncImages } from './actions';
+export const dynamic='force-dynamic';
+function Fields({ title='',alt='' }: {title?:string;alt?:string}) {return <><label className="field"><span>Title</span><input name="title" required maxLength={160} defaultValue={title}/></label><label className="field"><span>Alternative text</span><input name="alt_text" maxLength={500} defaultValue={alt}/></label><label className="field"><span>Image file (PNG, JPEG or WebP · maximum 2 MB)</span><input type="file" name="file" accept="image/png,image/jpeg,image/webp"/></label></>;}
+export default async function Images({searchParams}:{searchParams:Promise<{page?:string;error?:string;success?:string}>}) {
+ const {db}=await requireAdmin();const query=await searchParams;const page=Math.max(1,Number(query.page)||1);
+ const {data,error,count}=await db.from('uploaded_images').select('*',{count:'exact'}).order('created_at',{ascending:false}).range((page-1)*24,page*24-1);
+ const images=await Promise.all((data??[]).map(async row=>{const result=await db.storage.from(row.bucket_id).createSignedUrl(row.path,300);return {...row,url:result.data?.signedUrl,previewError:result.error?.message};}));
+ return <main><AdminNav/><p className="eyebrow">PRIVATE IMAGE LIBRARY</p><h1>Uploaded images</h1><p>Manage private artwork and listener uploads. Previews expire after five minutes. Replacing a listener image preserves its original journal or profile object.</p>{query.error&&<p role="alert" className="notice error">{query.error}</p>}{query.success&&<p role="status" className="notice">{query.success}</p>}
+ <form action={syncImages}><button>Refresh listener uploads</button></form><details className="panel"><summary>Upload a new image</summary><form action={saveImage}><Fields/><button>Upload image</button></form></details>
+ {error?<p role="alert" className="error">{error.message}</p>:<><p className="muted">{count??0} images · Page {page}</p><div className="image-grid">{images.map(image=><article className="panel" key={image.id}>{image.url?<img src={image.url} alt={image.alt_text||image.title}/>:<p className="error">Preview unavailable: {image.previewError}</p>}<h2>{image.title}</h2><p><code>{image.bucket_id}/{image.path}</code></p><small>{new Date(image.created_at).toISOString()}</small><details><summary>Edit / replace image</summary><form action={saveImage}><input type="hidden" name="id" value={image.id}/><Fields title={image.title} alt={image.alt_text}/><button>Save image</button></form></details><details className="delete"><summary>Delete image…</summary><p>Permanently delete this file? Deleting a listener upload may remove an image used in their journal or profile.</p><form action={deleteImage}><input type="hidden" name="id" value={image.id}/><button>Confirm deletion</button></form></details></article>)}</div>{!images.length&&<p>No uploaded images yet.</p>}</>}
+ <div className="toolbar">{page>1&&<Link href={`?page=${page-1}`}>← Previous</Link>}{page*24<(count??0)&&<Link href={`?page=${page+1}`}>Next →</Link>}</div></main>;
+}

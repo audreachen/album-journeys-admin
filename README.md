@@ -12,3 +12,25 @@ Admin-only Next.js dashboard for Album Journeys, using its existing Supabase dat
 All admin pages and Server Actions check Supabase authentication, Google identity, and the database superadmin flag. RLS also protects the admin-only data. No service-role key is needed in the web app.
 
 The generated-map catalog is initially separate from existing AI generations; existing listener ratings remain intact.
+
+
+## Assignment administration
+
+The Fruit Stand now includes `/log` (Input, AI output, Timestamp, User ID), read-only prompt chains/steps, requests, raw LLM responses and AI energy-map media; editable weighted prompt-chain mixes; and CRUD for terms, examples, models, providers, signup domains, email exceptions and uploaded images.
+
+Every page and server mutation calls `requireAdmin()`. Supabase independently enforces Google-backed superadmin RLS. Profile INSERT/UPDATE privileges exclude `is_superadmin`. Logs are immutable to browser roles. Image bytes remain in private buckets, use short-lived signed previews and require the same admin policy for uploads/updates/deletes. New admin uploads are capped at 2 MB and checked by file signature. Referenced models/providers cannot be deleted.
+
+The public generator selects an enabled weighted chain, uses its actual step model/settings, includes terms/examples as grounding, and records every provider attempt. Only validated output creates AI-generated media. An optional bearer session is verified with `getUser` before storing a user ID; anonymous calls remain supported and labeled. Logging fails closed. `JOURNEY_RUNTIME_TOKEN` is a server-only, narrowly scoped credential in the original app's Vercel branch environment; its hash is stored in `journey_private.runtime_credentials`. Never commit plaintext credentials or put this token in `NEXT_PUBLIC_*` variables. The existing Gemini key stays server-side. Runtime RPCs deliberately require this token; admin clients cannot write audit records.
+
+`allowed_signup_domains` and `whitelisted_email_addresses` are managed policy lists. They do not currently enforce a signup gate or grant admin access, preserving the existing Google OAuth signup behavior. Only the Google model adapter is implemented; unsupported adapters are rejected.
+
+### Verification
+
+- `npm test`: strict energy-map validation and byte-signature upload validation.
+- `npm run build`: production compilation and TypeScript checks.
+- `tests/database-security.sql`: transaction-only tests for admin CRUD, profile upserts, nonadmin/anonymous denial, immutable logs, mix safeguards and storage RLS. All fixtures roll back. Execute through privileged SQL tooling, never through an application account.
+- Migrations are additive. `20261026053150_journey_admin_catalog.sql` adds the catalog/audit/storage policies; `20261026053645_journey_admin_integrity.sql` protects the final active mix and supports listener-image refresh.
+
+Existing user images can be imported with **Refresh listener uploads**; this catalogs their paths without moving their files. Replacing a catalog entry for a listener image preserves the original object. Explicit deletion warns that a listener's journal/profile may be affected.
+
+Authenticated browser checks and a screenshot require signing in with the existing Google superadmin account. Database-role tests do not replace these checks.

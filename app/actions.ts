@@ -49,3 +49,4 @@ export async function signOut() {
   await db.auth.signOut();
   redirect('/login');
 }
+
